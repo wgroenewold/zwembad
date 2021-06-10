@@ -1,0 +1,25 @@
+esphome:
+  name: zwembad
+  platform: ESP32
+  board: nodemcu-32s
+
+wifi:
+  ssid: "WIFI_SSID"
+  password: "WIFI_PASSWORD"
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Zwembad Hotspot"
+    password: "zwemmenisleuk!"
+
+captive_portal:
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  password: "HA_PASSWORD"
+
+ota:
+  password: "OTA_PASSWORD"
