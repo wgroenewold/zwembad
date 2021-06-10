@@ -1,25 +1,132 @@
+substitutions:
+  #WiFi settings
+  wifi_ssid: wifi_ssid_here
+  wifi_password: wifi_password_here
+
+  #MQTT settings
+  mqtt_broker: mqtt_broker_here
+  mqtt_username: mqtt_username_here
+  mqtt_password: mqtt_password_here
+
+  #Pin settings
+  pin_1wire: 23                       #temperature
+  pin_i2c_sda: 13                     #luxmeter
+  pin_i2c_scl: 16                     #luxmeter
+  pin_pulsecounter1: 5                #flowmeter
+  pin_pulsecounter2: 5                #flowmeter
+
+  #Address settings
+  address_dallas1: 0x1c0000031edd2a28 #temperature
+  address_dallas2: 0x1c0000031edd2a28 #temperature
+  address_dallas3: 0x1c0000031edd2a28 #temperature
+  address_i2c: 0x23                   #luxmeter
+
+  #Optional settings
+  fallback_password: Zwemmenisleuk!   #Fallback hotspot
+  ota_pw: nwEtLwX885wV23TnJFDQ        #OTA security
+
+#Core
 esphome:
-  name: zwembad
+  name: Zwembad
   platform: ESP32
   board: nodemcu-32s
 
+#WiFi
 wifi:
-  ssid: "WIFI_SSID"
-  password: "WIFI_PASSWORD"
+  ssid: ${wifi_ssid}
+  password: ${wifi_password}
 
-  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  # Fallback hotspot
   ap:
     ssid: "Zwembad Hotspot"
-    password: "zwemmenisleuk!"
+    password: ${fallback_pw}
 
 captive_portal:
 
-# Enable logging
+#Log
 logger:
+  level: VERBOSE
+  logs:
+    mqtt.component: DEBUG
+    mqtt.client: ERROR
 
-# Enable Home Assistant API
-api:
-  password: "HA_PASSWORD"
+#MQTT
+mqtt:
+  broker: ${mqtt_broker}
+  username: ${mqtt_username}
+  password: ${mqtt_password}
 
+#OTA
 ota:
-  password: "OTA_PASSWORD"
+  password: ${ota_pw}
+
+#Webserver
+web_server:
+  port: 80
+
+#1-wire hub
+dallas:
+  - pin: ${pin_1wire}
+
+#I2C bus
+i2c:
+  - id: bus_a
+    sda: ${pin_i2c_sda}
+    scl: ${pin_i2c_scl}
+    scan: True
+
+#Sensors
+sensor:
+  - platform: dallas
+    name: "Temperatuur pomp (bad)"
+    address: ${address_dallas1}
+    device_class: "temperature"
+    icon: "mdi:thermometer"
+    state_class: "measurement"
+    unit_of_measurement: "°C"
+
+  - platform: dallas
+    name: "Temperatuur verwarming (uit)"
+    address: ${address_dallas2}
+    device_class: "temperature"
+    icon: "mdi:thermometer"
+    state_class: "measurement"
+    unit_of_measurement: "°C"
+
+  - platform: dallas
+    name: "Temperatuur buiten"
+    address: ${address_dallas3}
+    device_class: "temperature"
+    icon: "mdi:thermometer"
+    state_class: "measurement"
+    unit_of_measurement: "°C"
+
+  - platform: pulse_counter
+    name: "Flow pomp"
+    icon: "mdi:water-pump"
+    filters:
+      - lambda: return (x / 27.0) * 60.0;
+    pin: ${pin_pulsecounter1}
+    state_class: "measurement"
+    unit_of_measurement: "L/uur"
+    update_interval: 5s
+
+  - platform: pulse_counter
+    name: "Flow verwarming"
+    icon: "mdi:water-pump"
+    filters:
+      - lambda: return (x / 27.0) * 60.0;
+    pin: ${pin_pulsecounter2}
+    state_class: "measurement"
+    unit_of_measurement: "L/uur"
+    update_interval: 5s
+
+  - platform: bh1750
+    name: "Luxmeter"
+    address: ${address_i2c}
+    device_class: "illuminance"
+    i2c_id: bus_a
+    measurement_duration: 31
+    state_class: "measurement"
+    unit_of_measurement: "lx"
+    update_interval: 60s
